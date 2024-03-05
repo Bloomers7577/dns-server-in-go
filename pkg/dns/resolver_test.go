@@ -68,7 +68,8 @@ func TestHandlePacket(t *testing.T) {
 			t.Fatalf("Pack error: %s", err)
 		}
 
-		err = handlePacket(&MockPacketConn{}, &net.IPAddr{IP: net.ParseIP("127.0.0.1")}, buf)
+		blocked := make(map[string]bool)
+		err = handlePacket(&MockPacketConn{}, &net.IPAddr{IP: net.ParseIP("127.0.0.1")}, buf, blocked )
 		if err != nil {
 			t.Fatalf("serve error: %s", err)
 		}

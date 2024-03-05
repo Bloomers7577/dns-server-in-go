@@ -13,13 +13,13 @@ import (
 
 const ROOT_SERVERS = "198.41.0.4,199.9.14.201,192.33.4.12,199.7.91.13,192.203.230.10,192.5.5.241,192.112.36.4,198.97.190.53"
 
-func HandlePacket(pc net.PacketConn, addr net.Addr, buf []byte) {
-	if err := handlePacket(pc, addr, buf); err != nil {
+func HandlePacket(pc net.PacketConn, addr net.Addr, buf []byte, blockedDomains map[string]bool) {
+	if err := handlePacket(pc, addr, buf, blockedDomains); err != nil {
 		fmt.Printf("handlePacket error [%s]: %s\n", addr.String(), err)
 	}
 }
 
-func handlePacket(pc net.PacketConn, addr net.Addr, buf []byte) error {
+func handlePacket(pc net.PacketConn, addr net.Addr, buf []byte, blockedDomains map[string]bool) error {
 	p := dnsmessage.Parser{}
 	header, err := p.Start(buf)
 	if err != nil {
@@ -29,10 +29,30 @@ func handlePacket(pc net.PacketConn, addr net.Addr, buf []byte) error {
 	if err != nil {
 		return err
 	}
-	response, err := dnsQuery(getRootServers(), question)
+
+
+
+
+	trimmedDomain := strings.TrimSuffix( strings.TrimSpace(question.Name.String()), ".")
+
+	_, blocked := blockedDomains[trimmedDomain]
+
+
+
+	var response *dnsmessage.Message 
+	if blocked {
+		tempResponse := dnsmessage.Message{
+		Header: dnsmessage.Header{RCode: dnsmessage.RCodeNameError}}
+		response = &tempResponse
+
+	} else {
+		response, err = dnsQuery(getRootServers(), question)
+	}
+
 	if err != nil {
 		return err
 	}
+
 	response.Header.ID = header.ID
 	responseBuffer, err := response.Pack()
 	if err != nil {
@@ -47,7 +67,6 @@ func handlePacket(pc net.PacketConn, addr net.Addr, buf []byte) error {
 }
 
 func dnsQuery(servers []net.IP, question dnsmessage.Question) (*dnsmessage.Message, error) {
-	fmt.Printf("QUESTION\n%+v\n", question)
 	for i := 0; i < 3; i++ {
 		dnsAnswer, header, err := outgoingDnsQuery(servers, question)
 		if err != nil {
@@ -64,7 +83,6 @@ func dnsQuery(servers []net.IP, question dnsmessage.Question) (*dnsmessage.Messa
 			}, nil
 		}
 		authorities, err := dnsAnswer.AllAuthorities()
-		fmt.Printf("AUTHORITIES\n%+v \n", authorities)
 		if err != nil {
 			return nil, err
 		}
