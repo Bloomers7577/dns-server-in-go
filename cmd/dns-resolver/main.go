@@ -38,7 +38,7 @@ func main() {
 
 
 	port := "53"
-	blocked := "blocked.txt"
+	blocked := "../../blocked.txt"
 
 	if len(os.Args) > 1 {
 		is := isInt(os.Args[1])
@@ -52,6 +52,8 @@ func main() {
 	if len(os.Args) > 2 {
 		blocked = os.Args[2]
 	}
+
+	fmt.Println(blocked)
 	
     blockedDomains, err := readBlockedDomains(blocked)
 
