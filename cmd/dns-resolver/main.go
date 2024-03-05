@@ -53,11 +53,10 @@ func main() {
 		blocked = os.Args[2]
 	}
 
-	fmt.Println(blocked)
 	
     blockedDomains, err := readBlockedDomains(blocked)
 
-	fmt.Printf("%+v", blockedDomains)
+	
 
 
     if err != nil {
